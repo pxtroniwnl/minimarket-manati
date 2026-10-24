@@ -1,13 +1,14 @@
 """Casos de uso sobre pedidos que comparten el bot y el panel."""
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 
 from app.flow import texts
 from app.flow.machine import InvalidTransition, can_transition, transition
-from app.flow.states import FlowStep, OrderStatus, PaymentMethod
-from app.models import Message, Order
+from app.flow.states import ACTIVE_STATUSES, FlowStep, OrderStatus, PaymentMethod
+from app.models import Customer, Message, Order
 from app.services import parsers
 from app.services.outbox import send_and_log
 from app.services.queue import queue_head
@@ -116,6 +117,23 @@ def keep_order(db: Session, order: Order) -> None:
     add_note(db, order, "Se descartó la solicitud de cancelación")
 
 
+def _validated_fields(order_text: str, address: str, payment_method: str, cash_amount: str):
+    """Valida lo que escribe el tendero en los formularios de pedido. Devuelve (texto, (torre, apto), pago, efectivo)."""
+    if not order_text.strip():
+        raise OrderActionError("El pedido no puede quedar vacío.")
+    result = parsers.parse_address_result(address)
+    if not result or not result.ok:
+        raise OrderActionError(result.error if result else "No entendí la dirección (ej. T3-502).")
+    if payment_method not in {p.value for p in PaymentMethod}:
+        raise OrderActionError("Elige una forma de pago.")
+    cash = None
+    if payment_method == PaymentMethod.EFECTIVO and cash_amount.strip():
+        cash = parsers.parse_amount(cash_amount)
+        if cash is None:
+            raise OrderActionError("No entendí con cuánto paga el cliente.")
+    return order_text.strip(), result.pair, payment_method, cash
+
+
 def edit_order(
     db: Session,
     order: Order,
@@ -129,35 +147,89 @@ def edit_order(
     """El tendero ajusta el pedido (p. ej. el cliente agregó algo por chat) [I4]."""
     if order.status not in FIELDS_EDITABLE:
         raise OrderActionError("Este pedido ya no se puede modificar.")
-    if not order_text.strip():
-        raise OrderActionError("El pedido no puede quedar vacío.")
-    result = parsers.parse_address_result(address)
-    if not result or not result.ok:
-        raise OrderActionError(result.error if result else "No entendí la dirección (ej. T3-502).")
-    if payment_method not in {p.value for p in PaymentMethod}:
-        raise OrderActionError("Elige una forma de pago.")
-    cash = None
-    if payment_method == PaymentMethod.EFECTIVO and cash_amount.strip():
-        cash = parsers.parse_amount(cash_amount)
-        if cash is None:
-            raise OrderActionError("No entendí con cuánto paga el cliente.")
+    text, pair, method, cash = _validated_fields(order_text, address, payment_method, cash_amount)
 
     changes = []
-    if order_text.strip() != (order.order_text or ""):
+    if text != (order.order_text or ""):
         changes.append("pedido")
-    if result.pair != (order.torre, order.apto):
+    if pair != (order.torre, order.apto):
         changes.append("dirección")
-    if payment_method != order.payment_method or cash != order.cash_amount:
+    if method != order.payment_method or cash != order.cash_amount:
         changes.append("pago")
     if (notes.strip() or None) != order.notes:
         changes.append("notas")
     if not changes:
         return
-    order.order_text = order_text.strip()
-    order.torre, order.apto = result.pair
-    order.payment_method, order.cash_amount = payment_method, cash
+    order.order_text = text
+    order.torre, order.apto = pair
+    order.payment_method, order.cash_amount = method, cash
     order.notes = notes.strip() or None
     add_note(db, order, f"✏️ La tienda editó: {', '.join(changes)}")
+
+
+def create_manual(
+    db: Session,
+    *,
+    name: str,
+    phone: str,
+    order_text: str,
+    address: str,
+    payment_method: str,
+    cash_amount: str,
+    notes: str,
+    total: str,
+) -> Order:
+    """Pedido que llega por llamada o en persona: el tendero lo carga y entra directo a la fila [L1].
+
+    No se le escribe al cliente: iniciar conversación requiere plantillas pagas. Si deja su
+    WhatsApp y luego escribe, su chat queda unido a este pedido.
+    """
+    text, pair, method, cash = _validated_fields(order_text, address, payment_method, cash_amount)
+    if method == PaymentMethod.EFECTIVO and cash is None:
+        raise OrderActionError("Escribe con cuánto paga el cliente (o el total si paga exacto).")
+    amount = parse_total(total) if total.strip() else None
+
+    customer = None
+    if phone.strip():
+        normalized = parsers.normalize_phone(phone)
+        if normalized is None:
+            raise OrderActionError("Ese número no parece un celular (ej. 300 111 2233).")
+        customer = db.scalar(select(Customer).where(Customer.phone == normalized))
+        if customer and db.scalar(
+            select(Order.id).where(Order.customer_id == customer.id, Order.status.in_([s.value for s in ACTIVE_STATUSES]))
+        ):
+            raise OrderActionError("Ese cliente ya tiene un pedido en curso. Ábrelo desde la fila y edítalo.")
+        if customer is None:
+            customer = Customer(phone=normalized)
+            db.add(customer)
+        customer.torre, customer.apto = pair  # dirección guardada para su próximo pedido por WhatsApp
+    else:
+        customer = Customer(phone=None)
+        db.add(customer)
+    customer.name = name.strip() or customer.name or "Cliente en tienda"
+
+    order = Order(
+        customer=customer,
+        source="tienda",
+        status=OrderStatus.BORRADOR.value,
+        order_text=text,
+        torre=pair[0],
+        apto=pair[1],
+        payment_method=method,
+        cash_amount=cash,
+        notes=notes.strip() or None,
+        flow_step=FlowStep.RESUMEN.value,
+        # El aviso "eres el siguiente" no aplica: el cliente no está en WhatsApp con nosotros.
+        next_notified=True,
+    )
+    db.add(order)
+    transition(order, OrderStatus.EN_COLA)
+    if amount is not None:
+        order.total = amount
+        transition(order, OrderStatus.CONFIRMADO)
+    db.flush()
+    add_note(db, order, "🏪 Pedido cargado por la tienda")
+    return order
 
 
 def return_to_bot(db: Session, client: WhatsAppClient, order: Order) -> None:

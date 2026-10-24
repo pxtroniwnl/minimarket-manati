@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Privacidad · {{ store_name }}{% endblock %}
+{% block body %}
+<header class="top"><h1>🏪 {{ store_name }}</h1></header>
+<main class="wrap legal">
+  <h2>Política de tratamiento de datos personales</h2>
+  <p class="muted">Última actualización: {{ updated }}</p>
+
+  <p><b>{{ store_name }}</b> es la tienda de barrio del conjunto residencial Manatí (Parque Heredia, Cartagena, Colombia). Recibimos pedidos por WhatsApp mediante un asistente automático y los entregamos en tu apartamento. Esta política explica qué datos usamos y para qué, según la Ley 1581 de 2012 y el Decreto 1377 de 2013.</p>
+
+  <h3>Qué datos tratamos</h3>
+  <ul>
+    <li>Tu número de celular y el nombre de tu perfil de WhatsApp.</li>
+    <li>Tu dirección dentro del conjunto (torre y apartamento).</li>
+    <li>Lo que pides, la forma de pago y, si pagas en efectivo, con cuánto pagas.</li>
+    <li>Los mensajes que nos escribes por WhatsApp sobre tus pedidos.</li>
+  </ul>
+
+  <h3>Para qué los usamos</h3>
+  <p>Solo para recibir, preparar y entregar tus pedidos, y para responderte sobre ellos. No los vendemos, no los compartimos con terceros para publicidad y no te escribimos por iniciativa propia: solo respondemos cuando tú nos escribes.</p>
+
+  <h3>Con quién se comparten</h3>
+  <p>Los mensajes pasan por la plataforma de WhatsApp Business de Meta, que es la que permite enviarlos y recibirlos. Los datos se guardan en servidores contratados para operar el servicio (hosting y base de datos). Nadie más tiene acceso.</p>
+
+  <h3>Cuánto tiempo los guardamos</h3>
+  <p>Los mensajes se borran automáticamente después de {{ retention_days }} días. Tu número y tu última dirección se conservan para que no tengas que repetirla en tu próximo pedido, hasta que pidas que los borremos.</p>
+
+  <h3 id="borrar">Tus derechos y cómo borrar tus datos</h3>
+  <p>Puedes conocer, actualizar, rectificar o pedir que eliminemos tus datos, y revocar tu autorización, en cualquier momento y sin costo. Para hacerlo:</p>
+  <ul>
+    <li>escríbenos <b>"tienda"</b> por WhatsApp para hablar con una persona y pídelo, o</li>
+    <li>pídelo directamente en la tienda.</li>
+  </ul>
+  <p>Atendemos la solicitud en un máximo de 15 días hábiles. Si no quedas conforme, puedes acudir a la Superintendencia de Industria y Comercio.</p>
+
+  <h3>Responsable</h3>
+  <p>{{ store_name }}, conjunto residencial Manatí, Parque Heredia, Cartagena de Indias, Colombia.</p>
+</main>
+{% endblock %}

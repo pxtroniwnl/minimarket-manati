@@ -3,14 +3,15 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.routers import panel, simulator, webhook
 from app.services.auth import NotLoggedIn
 from app.startup import RedactSecrets, validate_settings
+from app.templating import templates
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logging.getLogger("uvicorn.access").addFilter(RedactSecrets())
@@ -57,6 +58,14 @@ if get_settings().whatsapp_mode == "mock":
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+@app.get("/privacidad", response_class=HTMLResponse)
+def privacy(request: Request):
+    """Política de datos (Ley 1581). Meta la exige para publicar la app; es pública."""
+    return templates.TemplateResponse(
+        request, "privacidad.html", {"updated": "24 de octubre de 2026", "retention_days": get_settings().retention_days}
+    )
 
 
 @app.get("/")

@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.config import get_settings
@@ -169,6 +170,45 @@ def toggle_pause(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(request, "panel/_pause.html", {"paused": store.is_paused(db)})
 
 
+# ------------------------------------------------------------ nuevo pedido
+
+NEW_ORDER_FIELDS = ("name", "phone", "order_text", "address", "payment_method", "cash_amount", "notes", "total")
+
+
+@panel.get("/nuevo", response_class=HTMLResponse)
+def new_order_page(request: Request):
+    return templates.TemplateResponse(request, "panel/new.html", {"form": {}, "error": None})
+
+
+@panel.post("/nuevo", response_class=HTMLResponse)
+def create_order(
+    request: Request,
+    name: str = Form(""),
+    phone: str = Form(""),
+    order_text: str = Form(""),
+    address: str = Form(""),
+    payment_method: str = Form(""),
+    cash_amount: str = Form(""),
+    notes: str = Form(""),
+    total: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """El tendero carga un pedido que llegó por llamada o en persona [L1]."""
+    form = dict(zip(NEW_ORDER_FIELDS, (name, phone, order_text, address, payment_method, cash_amount, notes, total)))
+    try:
+        order = orders.create_manual(db, **form)
+        db.commit()
+    except OrderActionError as exc:
+        db.rollback()
+        return templates.TemplateResponse(request, "panel/_new_form.html", {"form": form, "error": str(exc)})
+    except IntegrityError:  # otro celular cargó un pedido para el mismo cliente al mismo tiempo
+        db.rollback()
+        error = "Ese cliente ya tiene un pedido en curso. Ábrelo desde la fila y edítalo."
+        return templates.TemplateResponse(request, "panel/_new_form.html", {"form": form, "error": error})
+    broker.publish("new_order", order_id=order.id)
+    return Response(status_code=204, headers={"HX-Redirect": f"/panel/pedido/{order.id}"})
+
+
 # ---------------------------------------------------------------- detalle
 
 
@@ -182,6 +222,7 @@ def _detail_context(db: Session, order: Order, error: str | None = None, flash: 
         "actions": orders.allowed_actions(order),
         "can_cancel": order.status not in (OrderStatus.ENTREGADO, OrderStatus.CANCELADO),
         "editable": order.status in [s.value for s in orders.FIELDS_EDITABLE],
+        "no_whatsapp": order.customer.phone is None,
         "outside_window": not within_window(order.customer)
         or bool(last_out and last_out.send_error == OUTSIDE_WINDOW_ERROR),
         "send_failed": bool(last_out and last_out.send_error and last_out.send_error != OUTSIDE_WINDOW_ERROR),

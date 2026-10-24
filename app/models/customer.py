@@ -11,7 +11,8 @@ class Customer(Base):
     __tablename__ = "customers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    phone: Mapped[str] = mapped_column(String(20), unique=True, index=True)
+    # None = cliente sin WhatsApp (pedido tomado en la tienda); el bot nunca le escribe.
+    phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String(120))
     torre: Mapped[int | None]
     apto: Mapped[str | None] = mapped_column(String(10))

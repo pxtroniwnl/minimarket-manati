@@ -128,3 +128,13 @@ Desde el 1 de octubre de 2026, Meta cobra los mensajes de servicio después de l
 | K3 | Avisos de "preparando" y "entregado" | Apagados por defecto (`NOTIFY_PREPARING`, `NOTIFY_DELIVERED`). "En camino" siempre se envía | ✅ |
 | K4 | Contador del mes en el panel | Cuenta los salientes aceptados este mes. Amarillo al 80% de `WA_FREE_TIER`, rojo al 100%. No cuenta los fallidos ni los de meses anteriores | ✅ |
 | K5 | Presupuesto por pedido | Cliente nuevo: 7 mensajes o menos por pedido completo. Cliente que repite: 6 o menos | ✅ (`test_K_message_budget_*`) |
+
+### L. Pedidos cargados por la tienda (llamada o en persona)
+| ID | Escenario | Comportamiento esperado | Estado |
+|---|---|---|---|
+| L1 | El tendero toma un pedido por teléfono o en el mostrador | "➕ Nuevo pedido" en el panel: pedido, dirección y pago obligatorios; nombre, celular, notas y total opcionales. Entra directo a la fila (o queda confirmado si ya trae el total) y se marca con 🏪 | ✅ |
+| L2 | Datos mal escritos | Mismos errores que el bot (torre/piso/apto inexistente, efectivo sin monto, celular inválido) sin perder lo escrito | ✅ |
+| L3 | Cliente sin WhatsApp | Nunca se llama a Meta: los avisos quedan en el chat como "sin WhatsApp" y el panel lo advierte | ✅ |
+| L4 | Deja su celular y luego escribe por WhatsApp | El mensaje se une a ese pedido (va al panel, no abre otro borrador) y su dirección queda guardada | ✅ |
+| L5 | El cliente ya tiene un pedido en curso | Se rechaza y se le indica al tendero que edite el existente | ✅ |
+

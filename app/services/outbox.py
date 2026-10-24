@@ -9,6 +9,7 @@ from app.utils import as_utc, utcnow
 
 WINDOW = timedelta(hours=24)
 OUTSIDE_WINDOW_ERROR = "El cliente debe escribir primero para poder responderle"
+NO_WHATSAPP_ERROR = "Pedido de la tienda sin WhatsApp: avísale por otro medio"
 
 # Límites de la Cloud API.
 MAX_TEXT = 4096
@@ -79,7 +80,9 @@ def _send_one(db, client, customer, order, out: OutgoingMessage, sender: str) ->
         text=out.text,
         payload_json={"buttons": [{"id": b.id, "title": b.title} for b in out.buttons]} if out.buttons else None,
     )
-    if not within_window(customer):
+    if customer.phone is None:
+        record.send_error = NO_WHATSAPP_ERROR
+    elif not within_window(customer):
         # Iniciar conversaciones requiere plantillas pagas: no lo hacemos.
         record.send_error = OUTSIDE_WINDOW_ERROR
     else:

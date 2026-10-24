@@ -22,6 +22,7 @@
   <div class="card-head">
     <span class="turn">{% if positions.get(o.id) %}#{{ positions[o.id] }}{% else %}🛵{% endif %}</span>
     <strong>T{{ o.torre }}-{{ o.apto }}</strong>
+    {% if o.source == "tienda" %}<span title="Cargado por la tienda">🏪</span>{% endif %}
     <span class="badge s-{{ o.status }}">{{ STATUS_LABEL[o.status] }}</span>
     {% if o.has_unread %}<span class="dot" title="Mensajes sin leer"></span>{% endif %}
     <span class="muted right">{{ w.minutes|ago }}{% if w.old %} · <b>de ayer</b>{% endif %}</span>

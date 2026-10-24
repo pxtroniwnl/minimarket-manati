@@ -1,0 +1,8 @@
+{% extends "panel/layout.html" %}
+{% block title %}Nuevo pedido · {{ store_name }}{% endblock %}
+{% block content %}
+<p><a href="/panel">← Volver a la fila</a></p>
+<h2 class="section">➕ Nuevo pedido</h2>
+<p class="muted">Para pedidos que llegan por llamada o en persona. Entra directo a la fila.</p>
+{% include "panel/_new_form.html" %}
+{% endblock %}

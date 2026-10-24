@@ -219,3 +219,11 @@ def is_yes_emoji(text: str) -> bool:
 def looks_like_question(text: str) -> bool:
     t = text.strip()
     return t.endswith("?") or t.startswith("¿") or bool(_RE_QUESTION_START.match(words(strip_greeting(t))))
+
+
+def normalize_phone(phone: str) -> str | None:
+    """'300 111 2233' / '+57 300-111-2233' → '+573001112233'. None si no parece un número."""
+    digits = "".join(c for c in phone if c.isdigit())
+    if len(digits) == 10:  # celular colombiano sin indicativo
+        digits = "57" + digits
+    return "+" + digits if 11 <= len(digits) <= 15 else None

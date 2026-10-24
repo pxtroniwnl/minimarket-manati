@@ -12,6 +12,7 @@ from app.models import Customer, Message
 from app.services.auth import require_panel
 from app.services.events import broker
 from app.services.inbox import process_incoming
+from app.services.parsers import normalize_phone
 from app.services.whatsapp import get_whatsapp_client
 from app.services.whatsapp.base import IncomingMessage, WhatsAppClient
 from app.templating import templates
@@ -23,10 +24,7 @@ DEFAULT_PHONES = ["+573001110001", "+573001110002", "+573001110003"]
 
 
 def _normalize_phone(phone: str) -> str:
-    digits = "".join(c for c in phone if c.isdigit())
-    if len(digits) == 10:  # celular colombiano sin indicativo
-        digits = "57" + digits
-    return "+" + digits
+    return normalize_phone(phone) or "+" + "".join(c for c in phone if c.isdigit())
 
 
 def _chat(db: Session, phone: str) -> list[Message]:

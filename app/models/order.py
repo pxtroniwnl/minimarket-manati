@@ -45,6 +45,8 @@ class Order(Base):
     next_notified: Mapped[bool] = mapped_column(Boolean, default=False)
     address_attempts: Mapped[int] = mapped_column(default=0)
     has_unread: Mapped[bool] = mapped_column(Boolean, default=False)
+    # whatsapp = lo armó el bot · tienda = lo cargó el tendero desde el panel.
+    source: Mapped[str] = mapped_column(String(10), default="whatsapp", server_default="whatsapp")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     queued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(

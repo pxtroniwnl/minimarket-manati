@@ -247,4 +247,6 @@ La app corre con **un solo proceso** (`--workers 1` en el `Dockerfile`). Los can
 - **Datos de ejemplo**: `uv run python -m scripts.seed` carga 3 pedidos. Solo funciona en modo mock y con la base vacía.
 - **Migraciones**: `uv run alembic upgrade head`. El contenedor las corre solo al arrancar.
 - **Privacidad (Ley 1581)**: la primera vez que alguien escribe, el bot le dice que su número y su dirección solo se usan para sus pedidos. En los logs los teléfonos salen enmascarados (`+57300***2233`) y nunca se registran tokens.
+- **Pedidos por llamada o en persona**: con "➕ Nuevo pedido" en el panel el tendero carga el pedido y este entra a la fila igual que los de WhatsApp. Al cliente no se le envía nada (iniciar conversaciones cuesta); si deja su celular y luego escribe, su chat queda unido al pedido.
+- **Política de privacidad**: es pública en `/privacidad` (Ley 1581). Meta pide esa URL para publicar la app, y la sección `/privacidad#borrar` sirve como instrucciones para borrar los datos.
 - **Pausar pedidos**: el botón "⏸️ Pausar pedidos" del panel hace que el bot conteste que por ahora no se reciben pedidos. Sirve, por ejemplo, cuando el tendero sale un momento.

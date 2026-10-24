@@ -43,3 +43,8 @@ def test_simulator_audio(panel):
 
 def test_health(client):
     assert client.get("/health").json() == {"ok": True}
+
+
+def test_privacy_policy_is_public(client):
+    r = client.get("/privacidad")
+    assert r.status_code == 200 and "Ley 1581" in r.text and 'id="borrar"' in r.text

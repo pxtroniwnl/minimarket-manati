@@ -3,7 +3,9 @@
 
   {% if flash %}<div class="banner ok">{{ flash }}</div>{% endif %}
   {% if error %}<div class="banner danger">{{ error }}</div>{% endif %}
-  {% if outside_window and order.status not in ("entregado", "cancelado") %}
+  {% if no_whatsapp and order.status not in ("entregado", "cancelado") %}
+  <div class="banner warn">🏪 Pedido de la tienda sin WhatsApp: los avisos (total, en camino) no le llegan al cliente. Avísale por otro medio.</div>
+  {% elif outside_window and order.status not in ("entregado", "cancelado") %}
   <div class="banner warn">⏰ El cliente debe escribir primero para poder responderle (pasaron más de 24 h desde su último mensaje).</div>
   {% endif %}
   {% if send_failed %}<div class="banner danger">❌ No se pudo enviar el último mensaje: {{ last_error }}</div>{% endif %}
@@ -42,7 +44,7 @@
       {% if order.needs_help and order.status == "borrador" %}<span class="badge s-borrador">Consulta</span>
       {% else %}<span class="badge s-{{ order.status }}">{{ STATUS_LABEL[order.status] }}</span>{% endif %}
     </div>
-    <div class="muted">{{ order.customer.name or "" }} {{ order.customer.phone }}{% if order.queued_at %} · llegó {{ order.queued_at|hora }}{% endif %}</div>
+    <div class="muted">{% if order.source == "tienda" %}🏪 {% endif %}{{ order.customer.name or "" }} {{ order.customer.phone or "" }}{% if order.queued_at %} · llegó {{ order.queued_at|hora }}{% endif %}</div>
     <p class="order-text">{{ order.order_text or "—" }}</p>
     {% if order.status != "borrador" %}
     <div class="meta-line">
@@ -130,7 +132,7 @@
        hx-trigger="refresh[detail.order_id=={{ order.id }}] from:body, every 10s">
     {% include "panel/_chat.html" %}
   </div>
-  {% if order.status not in ("entregado", "cancelado") %}
+  {% if order.status not in ("entregado", "cancelado") and not no_whatsapp %}
   <form class="send" hx-post="/panel/pedido/{{ order.id }}/mensaje" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
     <textarea name="text" rows="2" placeholder="Escríbele al cliente…" required></textarea>
     <button class="btn primary">Enviar</button>

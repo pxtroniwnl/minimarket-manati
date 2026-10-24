@@ -3,6 +3,7 @@
 {% block content %}
 <div class="row between">
   <button id="sound-btn" class="btn" type="button">🔔 Activar sonido</button>
+  <a class="btn primary" href="/panel/nuevo">➕ Nuevo pedido</a>
   {% include "panel/_pause.html" %}
 </div>
 <div id="queue" hx-get="/panel/cola" hx-trigger="load, refresh from:body, every 10s">

@@ -1,0 +1,25 @@
+<form id="new-order" class="stack" hx-post="/panel/nuevo" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button">
+  {% if error %}<div class="banner danger">{{ error }}</div>{% endif %}
+  <label for="order_text">Pedido *</label>
+  <textarea id="order_text" name="order_text" rows="4" required placeholder="ej. 2 panes tajados, 1 leche entera">{{ form.order_text or "" }}</textarea>
+  <label for="address">Dirección *</label>
+  <input id="address" name="address" required placeholder="ej. T3-502" value="{{ form.address or '' }}" autocomplete="off">
+  <label for="payment_method">Pago *</label>
+  <select id="payment_method" name="payment_method">
+    {% for v, l in [("efectivo", "Efectivo"), ("nequi", "Nequi"), ("transferencia", "Transferencia")] %}
+    <option value="{{ v }}" {% if form.payment_method == v %}selected{% endif %}>{{ l }}</option>
+    {% endfor %}
+  </select>
+  <label for="cash_amount">Paga con (si es efectivo)</label>
+  <input id="cash_amount" name="cash_amount" inputmode="decimal" placeholder="ej. 50 mil" value="{{ form.cash_amount or '' }}" autocomplete="off">
+  <label for="total">Total (opcional: si ya lo sabes, queda confirmado)</label>
+  <input id="total" name="total" inputmode="decimal" placeholder="ej. 12.500" value="{{ form.total or '' }}" autocomplete="off">
+  <label for="name">Nombre del cliente</label>
+  <input id="name" name="name" placeholder="ej. Doña Marta" value="{{ form.name or '' }}" autocomplete="off">
+  <label for="phone">Celular (opcional)</label>
+  <input id="phone" name="phone" inputmode="tel" placeholder="ej. 300 111 2233" value="{{ form.phone or '' }}" autocomplete="off">
+  <p class="muted">Al cliente no le llega ningún mensaje: si luego escribe por WhatsApp desde ese número, su chat aparece en este pedido.</p>
+  <label for="notes">Notas</label>
+  <input id="notes" name="notes" placeholder="ej. timbre dañado, llamar al llegar" value="{{ form.notes or '' }}" autocomplete="off">
+  <button class="btn primary block big">Agregar a la fila</button>
+</form>
