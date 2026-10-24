@@ -46,7 +46,7 @@ docker compose up --build
 ```
 Levanta Postgres y la app en modo simulador en http://localhost:8000.
 
-> Nota: el `Dockerfile` y el `docker-compose.yml` se escribieron siguiendo la guía oficial de uv, pero **no se pudieron construir en la máquina donde se desarrolló** porque no tenía Docker instalado. Todo lo demás (la app, las migraciones y los tests) sí se probó, tanto con SQLite como con Postgres 18.
+> Probado con Docker 29.1.3 y Compose 2.40: la imagen construye, aplica las migraciones al arrancar y un pedido completo por el simulador queda en la fila del panel. Los tests corren con SQLite y con Postgres 18.
 
 ### Contraseña del panel
 Está en `.env` (`PANEL_PASSWORD`). Para cambiarla, edita el archivo y reinicia. Para generar valores seguros:
