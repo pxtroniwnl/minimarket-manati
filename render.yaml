@@ -1,0 +1,31 @@
+# Blueprint de Render: Dashboard → New → Blueprint → este repositorio.
+# Los secretos (sync: false) se pegan en el dashboard; nunca van en este archivo.
+services:
+  - type: web
+    name: minimarket-manati
+    runtime: docker
+    plan: free
+    region: ohio            # misma zona que Neon aws-us-east-2
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: WHATSAPP_MODE
+        value: mock         # cambiar a cloud cuando estén las WA_*
+      - key: DATABASE_URL
+        sync: false
+      - key: PANEL_PASSWORD
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WA_PHONE_NUMBER_ID
+        sync: false
+      - key: WA_ACCESS_TOKEN
+        sync: false
+      - key: WA_VERIFY_TOKEN
+        sync: false
+      - key: WA_APP_SECRET
+        sync: false
+      - key: STORE_NAME
+        value: Minimarket Manatí
+      - key: TZ
+        value: America/Bogota

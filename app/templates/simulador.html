@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Simulador · {{ store_name }}{% endblock %}
+{% block body %}
+<header class="top">
+  <h1>📱 Simulador · {{ phone }}</h1>
+  <a href="/panel" target="_blank">Panel ↗</a>
+</header>
+<div class="wrap">
+  <form class="row" method="get" action="/simulador">
+    <input name="phone" value="{{ phone }}" placeholder="+57300…" style="flex:2">
+    <input name="name" value="{{ name }}" placeholder="Nombre (opcional)" style="flex:1">
+    <button class="btn">Cambiar</button>
+  </form>
+  <div class="chips">
+    {% for p in phones %}
+    <a class="chip {% if p == phone %}active{% endif %}" href="/simulador?phone={{ p|urlencode }}">Residente {{ loop.index }}</a>
+    {% endfor %}
+    <a class="chip" href="/simulador?phone={{ phone|urlencode }}" target="_blank">+ Otra pestaña</a>
+  </div>
+  <p class="muted">Simulas ser un residente escribiendo al WhatsApp de la tienda. Prueba también: <em>cancelar</em>, <em>reiniciar</em>, o enviar un audio.</p>
+
+  <div id="chat"
+       hx-get="/simulador/chat?phone={{ phone|urlencode }}"
+       hx-trigger="load, sse:refresh, every 5s"
+       sse-connect="/simulador/events?phone={{ phone|urlencode }}">
+  </div>
+</div>
+
+<div class="composer">
+  <form hx-post="/simulador/send" hx-target="#chat" hx-on::after-request="this.reset(); this.text.focus()">
+    <input type="hidden" name="phone" value="{{ phone }}">
+    <input type="hidden" name="name" value="{{ name }}">
+    <input name="text" placeholder="Escribe un mensaje" autocomplete="off" autofocus>
+    <button class="btn primary" aria-label="Enviar">➤</button>
+    <button class="btn" type="button" title="Enviar un audio de prueba"
+            hx-post="/simulador/send" hx-target="#chat"
+            hx-vals='{"phone": "{{ phone }}", "kind": "audio"}'>🎤</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+<div class="usage {{ usage.level }}" title="Meta regala {{ usage.free_tier }} mensajes de servicio por mes; después cobra cada mensaje.">
+  <div class="usage-text">
+    📨 <b>{{ "{:,}".format(usage.sent).replace(",", ".") }}</b> / {{ "{:,}".format(usage.free_tier).replace(",", ".") }} mensajes gratis este mes
+    {% if usage.level == "over" %}· <b>Meta ya está cobrando cada mensaje</b>
+    {% elif usage.level == "warn" %}· te estás acercando al límite{% endif %}
+  </div>
+  <div class="usage-bar"><span style="width: {{ [usage.ratio * 100, 100]|min|round(1) }}%"></span></div>
+</div>

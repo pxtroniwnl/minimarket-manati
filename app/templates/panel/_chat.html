@@ -1,0 +1,17 @@
+<div class="chat">
+  {% for m in messages %}
+  {% if m.direction == "sys" %}
+  <div class="note">{{ m.text }} · {{ m.created_at|hora }}</div>
+  {% else %}
+  <div class="bubble {% if m.direction == 'out' %}mine{% endif %} {% if m.order_id and m.order_id != order.id %}faded{% endif %}">
+    <div class="who">{{ {"cliente": "Cliente", "bot": "🤖 Bot", "tendero": "Tienda"}[m.sender] }}</div>
+    <div>{{ m.text|wa }}</div>
+    {% if m.payload_json and m.payload_json.buttons %}
+    <div class="muted">[{% for b in m.payload_json.buttons %}{{ b.title }}{% if not loop.last %} · {% endif %}{% endfor %}]</div>
+    {% endif %}
+    {% if m.send_error %}<div class="err">⚠️ {{ m.send_error }}</div>{% endif %}
+    <div class="meta">{{ m.created_at|hora }}</div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>

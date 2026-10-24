@@ -1,0 +1,20 @@
+<div class="chat">
+  {% if not messages %}<p class="muted" style="text-align:center">Escribe “hola” para empezar 👇</p>{% endif %}
+  {% for m in messages %}
+  <div class="bubble {% if m.direction == 'in' %}mine{% endif %}">
+    {% if m.sender == 'tendero' %}<div class="who">Tienda</div>{% endif %}
+    <div>{{ m.text|wa }}</div>
+    {% if m.payload_json and m.payload_json.buttons %}
+    <div class="wa-buttons">
+      {% for b in m.payload_json.buttons %}
+      <button hx-post="/simulador/send" hx-target="#chat"
+              hx-vals='{{ {"phone": phone, "kind": "button", "button_id": b.id, "text": b.title}|tojson }}'>{{ b.title }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if m.send_error %}<div class="err">⚠️ {{ m.send_error }}</div>{% endif %}
+    <div class="meta">{{ m.created_at|hora }}</div>
+  </div>
+  {% endfor %}
+</div>
+<script>window.scrollTo(0, document.body.scrollHeight);</script>

@@ -1,0 +1,6 @@
+{% extends "panel/layout.html" %}
+{% block title %}Pedido {{ order.id }} · {{ store_name }}{% endblock %}
+{% block heading %}<a href="/panel" class="back" aria-label="Volver a la cola">←</a> {% if order.torre %}T{{ order.torre }}-{{ order.apto }}{% elif order.needs_help %}Consulta{% else %}Pedido{% endif %}{% endblock %}
+{% block content %}
+{% include "panel/_detail.html" %}
+{% endblock %}

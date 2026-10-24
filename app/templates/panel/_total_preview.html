@@ -1,0 +1,9 @@
+{% if raw.strip() and value is none %}
+<span class="danger-text">No entiendo “{{ raw }}”. Escríbelo como 12.500 o 12 mil.</span>
+{% elif value %}
+= <b>{{ value|pesos }}</b>
+{% if cash %}
+  {% if cash >= value %} · cambio {{ (cash - value)|pesos }}
+  {% else %}<br><span class="danger-text">⚠️ El cliente paga con {{ cash|pesos }}: le faltan {{ (value - cash)|pesos }}</span>{% endif %}
+{% endif %}
+{% endif %}

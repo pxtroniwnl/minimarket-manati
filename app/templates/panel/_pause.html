@@ -1,0 +1,8 @@
+<form id="pause" hx-post="/panel/pausa" hx-target="#pause" hx-swap="outerHTML" hx-disabled-elt="find button"
+      {% if not paused %}hx-confirm="¿Pausar pedidos? El bot le dirá a los clientes que intenten más tarde."{% endif %}>
+  {% if paused %}
+  <button class="btn danger">⏸️ Pedidos pausados · Reanudar</button>
+  {% else %}
+  <button class="btn">⏸️ Pausar pedidos</button>
+  {% endif %}
+</form>

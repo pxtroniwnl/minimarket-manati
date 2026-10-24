@@ -1,0 +1,37 @@
+{% if help_drafts %}
+<h2 class="section">🙋 Consultas <span class="count">{{ help_drafts|length }}</span></h2>
+{% for o in help_drafts %}
+<a class="card help" href="/panel/pedido/{{ o.id }}">
+  <div class="card-head">
+    <strong>{{ o.customer.name or o.customer.phone }}</strong>
+    {% if o.has_unread %}<span class="dot" title="Mensajes sin leer"></span>{% endif %}
+    <span class="muted">{{ o.updated_at|hora }}</span>
+  </div>
+  <div class="clip">{{ o.order_text or "Quiere hablar con la tienda" }}</div>
+</a>
+{% endfor %}
+{% endif %}
+
+<h2 class="section">🧾 Fila de pedidos <span class="count">{{ positions|length }}</span></h2>
+{% if not queue %}
+<div class="empty">No hay pedidos en la fila 🎉<br><span class="muted">Los nuevos aparecen aquí solos.</span></div>
+{% endif %}
+{% for o in queue %}
+{% set w = wait[o.id] %}
+<a class="card {{ w.level }} {% if o.cancel_requested %}alert{% endif %}" href="/panel/pedido/{{ o.id }}">
+  <div class="card-head">
+    <span class="turn">{% if positions.get(o.id) %}#{{ positions[o.id] }}{% else %}🛵{% endif %}</span>
+    <strong>T{{ o.torre }}-{{ o.apto }}</strong>
+    <span class="badge s-{{ o.status }}">{{ STATUS_LABEL[o.status] }}</span>
+    {% if o.has_unread %}<span class="dot" title="Mensajes sin leer"></span>{% endif %}
+    <span class="muted right">{{ w.minutes|ago }}{% if w.old %} · <b>de ayer</b>{% endif %}</span>
+  </div>
+  {% if o.cancel_requested %}<div class="alert-line">⚠️ El cliente pidió cancelar</div>{% endif %}
+  <div class="clip">{{ o.order_text }}</div>
+  <div class="meta-line">
+    💳 {{ o.payment_method|capitalize }}{% if o.cash_amount %} · paga con {{ pesos(o.cash_amount) }}{% endif %}
+    {% if o.total %} · total {{ pesos(o.total) }}{% endif %}
+    {% if o.notes %}<br>🗒️ {{ o.notes }}{% endif %}
+  </div>
+</a>
+{% endfor %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<header class="top">
+  <h1>{% block heading %}🏪 Tienda{% endblock %}</h1>
+  <span id="conn" class="conn" hidden title="Sin conexión en tiempo real">⚠️</span>
+  <a href="/panel">Cola</a>
+  <a href="/panel/historial">Historial</a>
+  <form method="post" action="/logout" style="margin:0"><button class="link" title="Salir">Salir</button></form>
+</header>
+<div class="wrap">
+  {% if wa_health().auth_error %}
+  <div class="banner danger">🔌 WhatsApp desconectado: el token de Meta está vencido o es inválido. Los clientes no reciben mensajes hasta que se actualice <code>WA_ACCESS_TOKEN</code>.</div>
+  {% endif %}
+  <div id="usage" hx-get="/panel/uso" hx-trigger="load, refresh from:body delay:2s"></div>
+  {% block content %}{% endblock %}
+</div>
+<script src="/static/panel.js"></script>
+{% endblock %}

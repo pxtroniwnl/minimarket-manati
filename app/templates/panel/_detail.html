@@ -1,0 +1,139 @@
+<div id="detail" data-order="{{ order.id }}" data-status="{{ order.status }}"
+     hx-get="/panel/pedido/{{ order.id }}/detalle" hx-trigger="reload-detail from:body" hx-swap="outerHTML">
+
+  {% if flash %}<div class="banner ok">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="banner danger">{{ error }}</div>{% endif %}
+  {% if outside_window and order.status not in ("entregado", "cancelado") %}
+  <div class="banner warn">⏰ El cliente debe escribir primero para poder responderle (pasaron más de 24 h desde su último mensaje).</div>
+  {% endif %}
+  {% if send_failed %}<div class="banner danger">❌ No se pudo enviar el último mensaje: {{ last_error }}</div>{% endif %}
+
+  {% if order.cancel_requested and can_cancel %}
+  <div class="banner danger">
+    ⚠️ El cliente pidió cancelar.
+    <div class="row" style="margin-top:8px">
+      <form hx-post="/panel/pedido/{{ order.id }}/estado" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
+        <input type="hidden" name="status" value="cancelado"><input type="hidden" name="reason" value="cliente">
+        <input type="hidden" name="expected" value="{{ order.status }}">
+        <button class="btn danger">Cancelar pedido</button>
+      </form>
+      <form hx-post="/panel/pedido/{{ order.id }}/seguir" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
+        <button class="btn">Seguir con el pedido</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if order.needs_help and order.status == "borrador" %}
+  <div class="banner warn">
+    🙋 El cliente quiere hablar con la tienda. Respóndele abajo; cuando termines, devuélvelo al bot para que siga con el pedido.
+    <div class="row" style="margin-top:8px">
+      <form hx-post="/panel/pedido/{{ order.id }}/devolver-bot" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
+        <button class="btn primary">🤖 Devolver al bot</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <section class="card static">
+    <div class="card-head">
+      {% if position %}<span class="turn">#{{ position }}</span>{% endif %}
+      {% if order.torre %}<strong>{{ order.address_label }}</strong>{% endif %}
+      {% if order.needs_help and order.status == "borrador" %}<span class="badge s-borrador">Consulta</span>
+      {% else %}<span class="badge s-{{ order.status }}">{{ STATUS_LABEL[order.status] }}</span>{% endif %}
+    </div>
+    <div class="muted">{{ order.customer.name or "" }} {{ order.customer.phone }}{% if order.queued_at %} · llegó {{ order.queued_at|hora }}{% endif %}</div>
+    <p class="order-text">{{ order.order_text or "—" }}</p>
+    {% if order.status != "borrador" %}
+    <div class="meta-line">
+      💳 {{ (order.payment_method or "—")|capitalize }}
+      {% if order.cash_amount %} · paga con <b>{{ order.cash_amount|pesos }}</b>{% endif %}
+      {% if order.total %} · total <b>{{ order.total|pesos }}</b>{% endif %}
+      {% if order.change_due is not none %}
+        {% if order.change_due >= 0 %} · cambio <b>{{ order.change_due|pesos }}</b>
+        {% else %} · <span class="danger-text">le faltan {{ (-order.change_due)|pesos }}</span>{% endif %}
+      {% endif %}
+      {% if order.notes %}<br>🗒️ {{ order.notes }}{% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  {% if editable %}
+  <section class="actions">
+    <form class="stack" hx-post="/panel/pedido/{{ order.id }}/total" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
+      <input type="hidden" name="expected" value="{{ order.status }}">
+      <label for="total">{% if order.status == "en_cola" %}Total del pedido{% else %}Corregir total{% endif %}</label>
+      <div class="row">
+        <input id="total" name="total" inputmode="decimal" placeholder="ej. 12.500" autocomplete="off" style="flex:1"
+               value="{{ order.total or '' }}"
+               hx-post="/panel/total-preview" hx-trigger="input changed delay:300ms" hx-target="#total-preview"
+               hx-vals='{"cash": "{{ order.cash_amount or '' }}"}' hx-sync="closest form:abort">
+        <button class="btn primary">{% if order.status == "en_cola" %}Confirmar total{% else %}Corregir{% endif %}</button>
+      </div>
+      <div id="total-preview" class="muted"></div>
+    </form>
+
+    {% for st in actions %}
+    <form hx-post="/panel/pedido/{{ order.id }}/estado" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button"
+          {% if st.value == "entregado" %}hx-confirm="¿Confirmas que el pedido ya fue entregado?"{% endif %}>
+      <input type="hidden" name="status" value="{{ st.value }}">
+      <input type="hidden" name="expected" value="{{ order.status }}">
+      <button class="btn primary block big">{{ ACTION_LABEL[st] }}</button>
+    </form>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if can_cancel %}
+  <details class="fold">
+    <summary>❌ Cancelar pedido</summary>
+    <form class="stack" hx-post="/panel/pedido/{{ order.id }}/estado" hx-target="#detail" hx-swap="outerHTML"
+          hx-disabled-elt="find button" hx-confirm="¿Seguro que quieres cancelar este pedido? Se le avisa al cliente.">
+      <input type="hidden" name="status" value="cancelado">
+      <input type="hidden" name="expected" value="{{ order.status }}">
+      {% for key, label in CANCEL_REASONS.items() %}
+      <label class="radio"><input type="radio" name="reason" value="{{ key }}" {% if loop.first %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+      <label class="radio"><input type="radio" name="reason" value="otro"> Otro motivo:</label>
+      <input name="other_reason" placeholder="Escribe el motivo (se le envía al cliente)">
+      <button class="btn danger block">Cancelar pedido</button>
+    </form>
+  </details>
+  {% endif %}
+
+  {% if editable %}
+  <details class="fold">
+    <summary>✏️ Editar pedido</summary>
+    <form class="stack" hx-post="/panel/pedido/{{ order.id }}/editar" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
+      <input type="hidden" name="expected" value="{{ order.status }}">
+      <label>Pedido</label>
+      <textarea name="order_text" rows="4">{{ order.order_text or "" }}</textarea>
+      <label>Dirección</label>
+      <input name="address" value="T{{ order.torre }}-{{ order.apto }}">
+      <label>Pago</label>
+      <select name="payment_method">
+        {% for v, l in [("efectivo", "Efectivo"), ("nequi", "Nequi"), ("transferencia", "Transferencia")] %}
+        <option value="{{ v }}" {% if order.payment_method == v %}selected{% endif %}>{{ l }}</option>
+        {% endfor %}
+      </select>
+      <label>Paga con (si es efectivo)</label>
+      <input name="cash_amount" inputmode="decimal" value="{{ order.cash_amount or '' }}">
+      <label>Notas</label>
+      <input name="notes" value="{{ order.notes or '' }}">
+      <button class="btn block">Guardar cambios</button>
+    </form>
+  </details>
+  {% endif %}
+
+  <h2 class="section">💬 Chat</h2>
+  <div id="chat" class="panel-chat" hx-get="/panel/pedido/{{ order.id }}/chat?status={{ order.status }}"
+       hx-trigger="refresh[detail.order_id=={{ order.id }}] from:body, every 10s">
+    {% include "panel/_chat.html" %}
+  </div>
+  {% if order.status not in ("entregado", "cancelado") %}
+  <form class="send" hx-post="/panel/pedido/{{ order.id }}/mensaje" hx-target="#detail" hx-swap="outerHTML" hx-disabled-elt="find button">
+    <textarea name="text" rows="2" placeholder="Escríbele al cliente…" required></textarea>
+    <button class="btn primary">Enviar</button>
+  </form>
+  {% endif %}
+</div>

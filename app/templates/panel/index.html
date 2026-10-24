@@ -1,0 +1,11 @@
+{% extends "panel/layout.html" %}
+{% block title %}Cola · {{ store_name }}{% endblock %}
+{% block content %}
+<div class="row between">
+  <button id="sound-btn" class="btn" type="button">🔔 Activar sonido</button>
+  {% include "panel/_pause.html" %}
+</div>
+<div id="queue" hx-get="/panel/cola" hx-trigger="load, refresh from:body, every 10s">
+  <p class="muted">Cargando pedidos…</p>
+</div>
+{% endblock %}

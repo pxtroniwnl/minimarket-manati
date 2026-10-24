@@ -1,0 +1,22 @@
+{% extends "panel/layout.html" %}
+{% block title %}Historial · {{ store_name }}{% endblock %}
+{% block content %}
+<h2 class="section">📊 Hoy</h2>
+<div class="stats">
+  <div class="stat"><span class="muted">Vendido</span><b>{{ sold|pesos }}</b></div>
+  <div class="stat"><span class="muted">Entregados</span><b>{{ delivered }}</b></div>
+  <div class="stat"><span class="muted">Cancelados</span><b>{{ cancelled }}</b></div>
+</div>
+{% if not orders %}<div class="empty">Todavía no hay pedidos terminados hoy.</div>{% endif %}
+{% for o in orders %}
+<a class="card" href="/panel/pedido/{{ o.id }}">
+  <div class="card-head">
+    <strong>T{{ o.torre }}-{{ o.apto }}</strong>
+    <span class="badge s-{{ o.status }}">{{ STATUS_LABEL[o.status] }}</span>
+    <span class="muted right">{{ o.updated_at|hora }}</span>
+  </div>
+  <div class="clip">{{ o.order_text }}</div>
+  <div class="meta-line">{% if o.total %}Total {{ o.total|pesos }} · {% endif %}{{ (o.payment_method or "")|capitalize }}</div>
+</a>
+{% endfor %}
+{% endblock %}
