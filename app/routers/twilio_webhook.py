@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse, Response
 from sqlalchemy import select
@@ -11,11 +11,11 @@ from sqlalchemy.orm import sessionmaker
 from app.config import get_settings
 from app.db import get_session_factory
 from app.models import Customer, Message
-from app.routers.webhook import _apply_statuses, _process
-from app.services.inbox import store_incoming
+from app.routers.webhook import _apply_statuses
+from app.services.inbox import process_pending, store_incoming
 from app.services.whatsapp import get_whatsapp_client
 from app.services.whatsapp.base import IncomingMessage, WhatsAppClient
-from app.services.whatsapp.twilio import parse_form, valid_signature
+from app.services.whatsapp.twilio import TwimlReplies, parse_form, valid_signature
 from app.services.whatsapp.webhook_parser import StatusEvent
 
 log = logging.getLogger(__name__)
@@ -68,10 +68,18 @@ def _store(factory: sessionmaker, msg: IncomingMessage) -> int | None:
         return inbound.customer_id if inbound is not None and inbound.processed_at is None else None
 
 
+def _reply(factory: sessionmaker, replies: TwimlReplies, customer_id: int) -> None:
+    try:
+        with factory() as db:
+            process_pending(db, replies, customer_id)
+    except Exception:
+        # Queda pendiente (processed_at nulo) y se reintenta al reiniciar [H3].
+        log.exception("Error procesando pendientes del cliente %s", customer_id)
+
+
 @router.post("/webhook")
 async def receive(
     request: Request,
-    background: BackgroundTasks,
     factory: sessionmaker = Depends(get_session_factory),
     client: WhatsAppClient = Depends(get_whatsapp_client),
 ):
@@ -87,10 +95,11 @@ async def receive(
         # Twilio reintenta si no recibe 2xx: mejor 500 que perder el mensaje [H4].
         log.exception("No se pudo guardar el webhook de Twilio")
         return PlainTextResponse("Error", status_code=500)
+    replies = TwimlReplies(msg.phone, client)
     if customer_id is not None:
-        background.add_task(_process, factory, client, {customer_id})
-    # TwiML vacío: Twilio no responde nada por su cuenta; el bot contesta por la API.
-    return Response(EMPTY_TWIML, media_type="text/xml")
+        # El bot corre aquí mismo (milisegundos) y su respuesta viaja como TwiML.
+        await run_in_threadpool(_reply, factory, replies, customer_id)
+    return Response(replies.twiml(), media_type="text/xml")
 
 
 def _apply(factory: sessionmaker, events: list[StatusEvent]) -> None:

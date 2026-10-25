@@ -146,4 +146,5 @@ Desde el 1 de octubre de 2026, Meta cobra los mensajes de servicio después de l
 | M3 | El cliente responde "2" a un mensaje con opciones | Equivale a tocar el 2.º botón. Un número sin opciones previas se queda como texto. Un `MessageSid` repetido se ignora | ✅ |
 | M4 | Twilio avisa `undelivered`/`failed` (StatusCallback) | El mensaje queda con el error en el panel (p. ej. "fuera de las 24 h") | ✅ |
 | M5 | Envío | Opciones numeradas, partición a 1.600 caracteres, reintento en 5xx, 63016 → fuera de ventana, 63015 → no se unió al Sandbox, 20003 → banner de credenciales | ✅ |
+| M6 | Número de prueba de la consola nueva (rechaza texto libre por API: error 21654) | Las respuestas del bot viajan como TwiML en la respuesta del webhook, escapadas y contadas en el uso mensual. Lo dirigido a otro número (aviso "eres el siguiente") y lo del panel va por la API | ✅ |
 

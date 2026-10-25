@@ -1,5 +1,9 @@
 """Cliente de WhatsApp vía Twilio (Sandbox), solo para probar el MVP sin número propio en Meta.
 
+Las respuestas del bot viajan como TwiML en la respuesta del webhook (TwimlReplies): el número
+de prueba de la consola nueva rechaza texto libre por la API (error 21654) pero sí entrega TwiML.
+Lo que el tendero envía desde el panel sigue usando la API.
+
 Formato verificado en la documentación oficial de Twilio (2026-10):
 - Envío: POST /2010-04-01/Accounts/{SID}/Messages.json (form, basic auth) con From/To "whatsapp:+E164".
 - Entrantes: webhook form-urlencoded (From, Body, MessageSid, ProfileName, NumMedia, ButtonPayload…).
@@ -14,7 +18,9 @@ import hashlib
 import hmac
 import logging
 import time
+import uuid
 from collections.abc import Mapping
+from xml.sax.saxutils import escape
 
 import httpx
 
@@ -144,3 +150,26 @@ class TwilioWhatsAppClient:
             health.mark_auth_error(detail)
             return SendResult(ok=False, error="Credenciales de Twilio inválidas"), False
         return SendResult(ok=False, error=detail), resp.status_code >= 500 or resp.status_code == 429
+
+
+class TwimlReplies:
+    """Cliente que junta las respuestas para el remitente del webhook y las devuelve como TwiML.
+
+    Lo dirigido a otro número (p. ej. el aviso "eres el siguiente") se envía con el cliente real.
+    """
+
+    def __init__(self, phone: str, fallback):
+        self.phone = phone
+        self.fallback = fallback
+        self.bodies: list[str] = []
+
+    def send(self, to: str, message: OutgoingMessage) -> SendResult:
+        if to != self.phone:
+            return self.fallback.send(to, message)
+        self.bodies.extend(split_body(render_text(message)))
+        # Id propio para que el contador del panel lo cuente como enviado.
+        return SendResult(ok=True, wa_message_id=f"twiml-{uuid.uuid4().hex}")
+
+    def twiml(self) -> str:
+        messages = "".join(f"<Message>{escape(b)}</Message>" for b in self.bodies)
+        return f'<?xml version="1.0" encoding="UTF-8"?><Response>{messages}</Response>'

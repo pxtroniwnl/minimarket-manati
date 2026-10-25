@@ -114,6 +114,7 @@ Si todavía no tienes un número para Meta, puedes probar el bot en tu WhatsApp 
 - La cuenta de prueba trae unos **100 mensajes gratis**, y Twilio cuenta tanto los entrantes como los salientes. Alcanzan para unos 8 a 10 pedidos de prueba. Después cobra cada mensaje.
 - Todos usan el número compartido **+1 415 523 8886**. Cada persona que quiera probar le escribe primero `join <código>`, y esa conexión **vence a los 3 días**.
 - Las opciones salen numeradas ("1️⃣ Efectivo, 2️⃣ Nequi…") y se responde con el número, porque el Sandbox no garantiza botones.
+- El bot responde dentro del mismo webhook (TwiML). El número de prueba de la consola nueva de Twilio rechaza el texto libre por la API (error 21654), así que **lo que envía el tendero desde el panel (total, "en camino", chat) puede no llegar** en esta prueba. El panel muestra el error. Con Meta (`cloud`) todo llega normal.
 
 Pasos:
 1. Crea una cuenta gratis en https://www.twilio.com/try-twilio.

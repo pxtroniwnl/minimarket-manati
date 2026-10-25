@@ -40,10 +40,11 @@ def post(client, data, url=URL, sign=True):
     return client.post(url.removeprefix("http://testserver"), data=data, headers=headers)
 
 
-def says(client, body):
+def says(client, body) -> str:
+    """Envía un mensaje al webhook y devuelve el TwiML con la respuesta del bot."""
     r = post(client, form(body))
-    assert r.status_code == 200 and "<Response>" in r.text
-    return client.mock.sent[-1][1]
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/xml")
+    return r.text
 
 
 # ------------------------------------------------------------------ firma
@@ -86,23 +87,22 @@ def test_M2_parse_form_types():
 
 
 def test_M3_full_order_with_numbered_replies(client, db):
-    reply = says(client, "hola")
-    assert "Hola" in reply.text
+    assert "Hola" in says(client, "hola")
     says(client, "2 panes y una leche")
     pay = says(client, "t3 502")
-    assert [b.id.split(":")[0] for b in pay.buttons] == ["pago_efectivo", "pago_nequi", "pago_transf"]
+    assert "1️⃣" in pay and "2️⃣" in pay and "Responde con el número" in pay
     summary = says(client, "2")  # = tocar "Nequi"
-    assert "resumen_ok" in summary.buttons[0].id
+    assert "Nequi" in summary and "1️⃣" in summary
     done = says(client, "1")  # = tocar "Confirmar"
-    assert "#1" in done.text
+    assert "#1" in done
     order = db.scalars(select(Order)).one()
     assert (order.status, order.payment_method) == ("en_cola", "nequi")
+    assert client.mock.sent == []  # nada por la API: todo viajó como TwiML
 
 
 def test_M3_number_without_options_stays_text(client, db):
     says(client, "hola")
-    reply = says(client, "2")  # el saludo no tiene opciones: "2" es texto normal
-    assert reply.buttons == [] or all(not b.id.startswith("resumen_ok") for b in reply.buttons)
+    says(client, "2")  # el saludo no tiene opciones: "2" es texto normal
     inbound = db.scalars(select(Message).where(Message.direction == "in").order_by(Message.id)).all()[-1]
     assert inbound.payload_json["type"] == "text"
 
@@ -191,3 +191,23 @@ def test_month_start_is_utc_even_late_in_the_month():
 
     late = datetime(2026, 10, 31, 21, 0, tzinfo=ZoneInfo("America/Bogota"))  # ya es 1 de noviembre en UTC
     assert month_start(late) == datetime(2026, 10, 1, 5, 0, tzinfo=UTC)
+
+
+def test_M6_twiml_escapes_and_counts_as_sent(client, db):
+    from app.services.usage import monthly_usage
+
+    reply = says(client, "hola <b>&")
+    assert "<Message>" in reply and "<b>" not in reply.split("<Response>")[1].replace("<Message>", "").replace("</Message>", "")
+    assert monthly_usage(db).sent >= 1
+
+
+def test_M6_other_recipients_go_through_the_api():
+    from app.services.whatsapp.mock import MockWhatsAppClient
+    from app.services.whatsapp.twilio import TwimlReplies
+
+    api = MockWhatsAppClient()
+    replies = TwimlReplies(PHONE, api)
+    replies.send(PHONE, OutgoingMessage("para quien escribió"))
+    replies.send("+573009999999", OutgoingMessage("¡Eres el siguiente!"))
+    assert "para quien escribió" in replies.twiml() and "siguiente" not in replies.twiml()
+    assert api.sent[0][0] == "+573009999999"
