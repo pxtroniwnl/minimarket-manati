@@ -108,7 +108,7 @@ def send_message(db: Session, client: WhatsAppClient, order: Order, text: str) -
     if not text:
         raise OrderActionError("Escribe un mensaje.")
     order.has_unread = False
-    return send_and_log(db, client, order.customer, order, OutgoingMessage(text), sender="tendero")
+    return send_and_log(db, client, order.customer, order, OutgoingMessage(text), sender="tendero", kind="chat")
 
 
 def keep_order(db: Session, order: Order) -> None:

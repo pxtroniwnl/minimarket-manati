@@ -134,7 +134,7 @@ class Bot:
 
         # Traspaso a humano: desde en_cola el bot no responde [E1].
         if order and order.status in [s.value for s in HUMAN_STATUSES]:
-            return self._handoff(order, inbound, msg)
+            return self._handoff(db, order, inbound, msg, now)
 
         prefix = ""
         if order and self._expired(order, now):  # [F3]
@@ -234,7 +234,7 @@ class Bot:
 
     # ------------------------------------------------------- traspaso a humano
 
-    def _handoff(self, order: Order, inbound: Message, msg: IncomingMessage) -> BotResult:
+    def _handoff(self, db: Session, order: Order, inbound: Message, msg: IncomingMessage, now: datetime) -> BotResult:
         inbound.order_id = order.id
         if msg.type == "button":
             # Botón viejo del bot (p. ej. doble toque en Confirmar): no molesta al tendero [D5].
@@ -249,7 +249,22 @@ class Bot:
             else:  # [E4] ya está en proceso: decide el tendero
                 order.cancel_requested = True
                 result.replies.append(_msg(texts.CANCEL_REQUESTED))
+        elif self._needs_handoff_ack(db, order, now):  # [E10]
+            result.replies.append(_msg(texts.HANDOFF_ACK))
         return result
+
+    def _needs_handoff_ack(self, db: Session, order: Order, now: datetime) -> bool:
+        """Que el cliente no quede sin respuesta, pero sin repetir el aviso ni meterse si el tendero está chateando."""
+        last_out = db.scalar(
+            select(Message).where(Message.order_id == order.id, Message.direction == "out").order_by(Message.id.desc()).limit(1)
+        )
+        if last_out is None:
+            return True
+        if last_out.sender == "bot" and last_out.text == texts.HANDOFF_ACK:
+            return False
+        chatting = (last_out.payload_json or {}).get("kind") == "chat"
+        window = timedelta(minutes=get_settings().handoff_chat_minutes)
+        return not (chatting and now - as_utc(last_out.created_at) <= window)
 
     def _ask_for_help(self, order: Order) -> BotResult:  # [G1]
         order.needs_help = True

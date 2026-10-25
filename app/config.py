@@ -52,6 +52,8 @@ class Settings(BaseSettings):
 
     draft_ttl_minutes: int = 120
     courtesy_window_minutes: int = 180
+    # Si el tendero escribió hace menos de esto, el bot no interrumpe con el aviso de traspaso [E10].
+    handoff_chat_minutes: int = 30
     rate_limit_per_minute: int = 15
 
     @field_validator("database_url")

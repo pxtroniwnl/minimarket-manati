@@ -56,7 +56,7 @@ Estructura del conjunto (validación de direcciones): 10 torres; torres 1–3 co
 ### E. Después de confirmar (cola y traspaso)
 | ID | Escenario | Comportamiento esperado | Estado |
 |---|---|---|---|
-| E1 | Escribe estando en `en_cola` o un estado posterior | El bot calla, el mensaje va al panel y se marca no leído | ✅ |
+| E1 | Escribe estando en `en_cola` o un estado posterior | El mensaje va al panel y se marca no leído. El bot solo responde el aviso de E10 | ✅ |
 | E2 | Quiere agregar algo después de confirmar | Va al panel. El tendero puede editar el pedido | ✅ |
 | E3 | "cancelar" en `en_cola` | Se cancela y se le confirma al cliente | ✅ |
 | E4 | "cancelar" en confirmado, preparando o en camino | No se cancela: queda `cancel_requested` y el bot responde "Le avisé a la tienda, ellos te confirman" para que no quede sin respuesta | ✅ |
@@ -65,6 +65,7 @@ Estructura del conjunto (validación de direcciones): 10 torres; torres 1–3 co
 | E7 | Si queda de #1 justo al confirmar | No se manda aviso extra: el mensaje de confirmación ya dice #1 | ✅ |
 | E8 | Reacciones (👍 sobre un mensaje), pines, encuestas y otros eventos de sistema | Se ignoran sin responder. No crean borrador ni marcan no leído | ✅ |
 | E9 | El cliente edita un mensaje (WhatsApp lo manda como `unsupported/edit`, sin el texto nuevo) | En borrador: "Vi que editaste un mensaje… ¿me lo escribes de nuevo?". En cola: queda en el chat del panel como "[mensaje editado — no se ve la edición]". Sin pedido: se ignora | ✅ |
+| E10 | Escribe durante el traspaso y nadie le responde (p. ej. "hola" con el pedido en camino) | Una sola vez: "📩 Le pasé tu mensaje a la tienda…". No se repite mientras siga siendo lo último enviado, y no sale si el tendero le escribió hace menos de 30 min (`HANDOFF_CHAT_MINUTES`) | ✅ |
 
 ### F. Sin pedido activo o con un borrador viejo
 | ID | Escenario | Comportamiento esperado | Estado |

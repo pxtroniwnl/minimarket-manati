@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 
+from app.flow import texts
 from app.flow.states import FlowStep, OrderStatus
 from app.models import Customer, Message, Order
 from tests.factories import PAYMENT_BUTTONS, SUMMARY_BUTTONS, Resident, button_ids
@@ -162,11 +163,12 @@ def test_bot_silent_after_queue(db):
     db.commit()
 
     replies = r.says("¿me agregas un pan?")
-    assert replies == []
+    assert [m.text for m in replies] == [texts.HANDOFF_ACK]  # un solo aviso [E10]
+    assert r.says("y una leche") == []
     o = r.order
     assert o.has_unread is True
     last = db.scalar(select(Message).order_by(Message.id.desc()))
-    assert last.direction == "in" and last.order_id == o.id and last.text == "¿me agregas un pan?"
+    assert last.direction == "in" and last.order_id == o.id and last.text == "y una leche"
 
 
 def test_cancel_in_queue_vs_later(db):
@@ -200,8 +202,8 @@ def test_non_text_in_draft_and_after_queue(db):
     r.taps("pago_nequi")
     r.taps("resumen_ok")
     replies = r.sends("image")
-    assert replies == []
-    last = db.scalar(select(Message).order_by(Message.id.desc()))
+    assert [m.text for m in replies] == [texts.HANDOFF_ACK]
+    last = db.scalar(select(Message).where(Message.direction == "in").order_by(Message.id.desc()))
     assert last.text == "[imagen recibida]"
 
 

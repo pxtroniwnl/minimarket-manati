@@ -72,6 +72,10 @@ NO_ACTIVE_ORDER = "No tienes pedidos en curso 🙂 Cuando quieras pedir algo, es
 COURTESY_REPLY = "¡Con gusto! 🙌 Aquí estamos cuando nos necesites."
 NOT_UNDERSTOOD_BUTTONS = "Elige una de las opciones de abajo 👇"
 IS_IT_AN_ORDER = "¿Esto es tu pedido o una pregunta para la tienda? 🤔"
+HANDOFF_ACK = (
+    "📩 Le pasé tu mensaje a la tienda, te responden por aquí. "
+    "Si es un pedido nuevo, lo armamos apenas te entreguemos el actual."
+)
 HELP = "Listo, le paso tu mensaje a la tienda 🙋 Te responden por aquí en un momento."
 EDIT_MENU = "¿Qué quieres corregir? ✏️"
 NEXT_IN_LINE = "¡Eres el siguiente! 🎉 Tu pedido es el próximo que atiende la tienda."

@@ -60,6 +60,7 @@ def send_and_log(
     order: Order | None,
     out: OutgoingMessage,
     sender: str,
+    kind: str | None = None,
 ) -> Message:
     """Envía (solo mensajes de servicio, dentro de la ventana de 24h) y deja registro.
 
@@ -67,18 +68,21 @@ def send_and_log(
     """
     record = None
     for part in fit_limits(out):
-        record = _send_one(db, client, customer, order, part, sender)
+        record = _send_one(db, client, customer, order, part, sender, kind)
     return record
 
 
-def _send_one(db, client, customer, order, out: OutgoingMessage, sender: str) -> Message:
+def _send_one(db, client, customer, order, out: OutgoingMessage, sender: str, kind: str | None = None) -> Message:
+    payload = {"buttons": [{"id": b.id, "title": b.title} for b in out.buttons]} if out.buttons else {}
+    if kind:  # p. ej. "chat": lo escribió el tendero a mano (no es un aviso de estado)
+        payload["kind"] = kind
     record = Message(
         order_id=order.id if order else None,
         customer_id=customer.id,
         direction="out",
         sender=sender,
         text=out.text,
-        payload_json={"buttons": [{"id": b.id, "title": b.title} for b in out.buttons]} if out.buttons else None,
+        payload_json=payload or None,
     )
     if customer.phone is None:
         record.send_error = NO_WHATSAPP_ERROR

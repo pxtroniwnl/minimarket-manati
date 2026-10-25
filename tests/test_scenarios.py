@@ -317,6 +317,32 @@ def test_E4_cancel_request_gets_an_answer(db):
     assert r.order.cancel_requested and r.order.status == OrderStatus.EN_CAMINO
 
 
+def test_E10_handoff_answers_once_until_the_store_writes(db):
+    r = Resident(db)
+    queued(r)
+    r.order.status = OrderStatus.EN_CAMINO.value
+    db.commit()
+    first = r.says("Hola")
+    assert len(first) == 1 and "Le pasé tu mensaje a la tienda" in first[0].text
+    assert r.says("Quiero un pan bimbo y una gaseosa") == []  # no repite el aviso
+    assert r.order.has_unread
+
+
+def test_E10_no_ack_while_the_shopkeeper_is_chatting(db):
+    from app.services.orders import send_message
+    from app.services.whatsapp.mock import MockWhatsAppClient
+
+    r = Resident(db)
+    queued(r)
+    send_message(db, MockWhatsAppClient(), r.order, "Serían 15.200, ¿sí?")
+    db.commit()
+    assert r.says("sí, dale") == []
+    old = db.scalars(select(Message).where(Message.direction == "out").order_by(Message.id.desc())).first()
+    old.created_at = utcnow() - timedelta(hours=1)
+    db.commit()
+    assert "Le pasé tu mensaje" in r.says("¿ya viene?")[0].text  # la charla ya se enfrió
+
+
 def test_E5_same_instant_gets_different_positions(db):
     from app.services.queue import queue_position
     from tests.factories import make_queued
