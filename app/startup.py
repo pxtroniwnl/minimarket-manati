@@ -16,19 +16,23 @@ class ConfigError(RuntimeError):
 
 
 def validate_settings(s: Settings) -> None:
-    """En producción (cloud) no se arranca con secretos por defecto ni datos de Meta faltantes."""
-    if s.whatsapp_mode != "cloud":
-        return
-    missing = [
-        name
-        for name, value in (
+    """En producción (cloud o twilio) no se arranca con secretos por defecto ni credenciales faltantes."""
+    if s.whatsapp_mode == "cloud":
+        required = (
             ("WA_PHONE_NUMBER_ID", s.wa_phone_number_id),
             ("WA_ACCESS_TOKEN", s.wa_access_token),
             ("WA_VERIFY_TOKEN", s.wa_verify_token),
             ("WA_APP_SECRET", s.wa_app_secret),
         )
-        if not value
-    ]
+    elif s.whatsapp_mode == "twilio":
+        required = (
+            ("TWILIO_ACCOUNT_SID", s.twilio_account_sid),
+            ("TWILIO_AUTH_TOKEN", s.twilio_auth_token),
+            ("TWILIO_FROM", s.twilio_from),
+        )
+    else:
+        return
+    missing = [name for name, value in required if not value]
     if s.panel_password == DEFAULT_PASSWORD:
         missing.append("PANEL_PASSWORD (sigue en el valor por defecto)")
     if s.secret_key == DEFAULT_SECRET or len(s.secret_key) < 16:
@@ -36,7 +40,7 @@ def validate_settings(s: Settings) -> None:
     if s.database_url.startswith("sqlite"):
         missing.append("DATABASE_URL (SQLite se borra en el hosting gratis: usa Postgres)")
     if missing:
-        raise ConfigError("Configuración incompleta para WHATSAPP_MODE=cloud: " + "; ".join(missing))
+        raise ConfigError(f"Configuración incompleta para WHATSAPP_MODE={s.whatsapp_mode}: " + "; ".join(missing))
 
 
 class RedactSecrets(logging.Filter):

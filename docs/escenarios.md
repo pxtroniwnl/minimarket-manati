@@ -138,3 +138,12 @@ Desde el 1 de octubre de 2026, Meta cobra los mensajes de servicio después de l
 | L4 | Deja su celular y luego escribe por WhatsApp | El mensaje se une a ese pedido (va al panel, no abre otro borrador) y su dirección queda guardada | ✅ |
 | L5 | El cliente ya tiene un pedido en curso | Se rechaza y se le indica al tendero que edite el existente | ✅ |
 
+### M. Prueba con el Sandbox de Twilio (`WHATSAPP_MODE=twilio`)
+| ID | Escenario | Comportamiento esperado | Estado |
+|---|---|---|---|
+| M1 | Webhook sin firma, con firma alterada o sin token configurado | 403 y no se guarda nada. La firma se calcula sobre la URL pública y coincide con el `RequestValidator` oficial | ✅ |
+| M2 | Texto, botón, imagen, audio, documento o ubicación | Se traducen al mismo `IncomingMessage` que produce Meta | ✅ |
+| M3 | El cliente responde "2" a un mensaje con opciones | Equivale a tocar el 2.º botón. Un número sin opciones previas se queda como texto. Un `MessageSid` repetido se ignora | ✅ |
+| M4 | Twilio avisa `undelivered`/`failed` (StatusCallback) | El mensaje queda con el error en el panel (p. ej. "fuera de las 24 h") | ✅ |
+| M5 | Envío | Opciones numeradas, partición a 1.600 caracteres, reintento en 5xx, 63016 → fuera de ventana, 63015 → no se unió al Sandbox, 20003 → banner de credenciales | ✅ |
+

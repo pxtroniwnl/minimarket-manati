@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,12 +10,19 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./dev.db"
 
-    whatsapp_mode: Literal["mock", "cloud"] = "mock"
+    # mock = simulador · cloud = Meta Cloud API · twilio = Sandbox de Twilio (solo para pruebas)
+    whatsapp_mode: Literal["mock", "cloud", "twilio"] = "mock"
     wa_phone_number_id: str = ""
     wa_access_token: str = ""
     wa_verify_token: str = ""
     wa_app_secret: str = ""
     wa_graph_version: str = "v26.0"
+
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from: str = "whatsapp:+14155238886"  # número compartido del Sandbox
+    # URL pública del servicio (firma de Twilio y avisos de entrega). Render la da en RENDER_EXTERNAL_URL.
+    public_url: str = Field("", validation_alias=AliasChoices("PUBLIC_URL", "RENDER_EXTERNAL_URL"))
 
     llm_provider: Literal["none", "gemini"] = "none"
     gemini_api_key: str = ""

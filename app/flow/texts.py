@@ -46,7 +46,7 @@ def address_invalid(reason: str) -> str:
     return f"Mmm, esa dirección no existe en el conjunto 🤔 {reason}\nEscríbela así: *{EXAMPLE_ADDRESS}*"
 
 
-ADDRESS_HELP_OFFER = "Si prefieres, toca el botón y te atiende alguien de la tienda 🙋"
+ADDRESS_HELP_OFFER = "Si prefieres, elige la opción de abajo y te atiende alguien de la tienda 🙋"
 ASK_PAYMENT = "¿Cómo vas a pagar? 💳"
 ASK_CASH = "¿Con cuánto pagas? 💵 (así te llevamos el cambio)\nEjemplo: *50 mil* o *50.000*"
 CASH_RETRY = "Escríbeme el monto en números, por ejemplo *20.000* o *20 mil* 🙏"
@@ -70,7 +70,7 @@ RESTARTED = "Empecemos de nuevo 🔄"
 EXPIRED = "Tu pedido anterior quedó sin terminar, así que empecemos de nuevo 🔄"
 NO_ACTIVE_ORDER = "No tienes pedidos en curso 🙂 Cuando quieras pedir algo, escríbeme."
 COURTESY_REPLY = "¡Con gusto! 🙌 Aquí estamos cuando nos necesites."
-NOT_UNDERSTOOD_BUTTONS = "Toca una de las opciones de abajo 👇"
+NOT_UNDERSTOOD_BUTTONS = "Elige una de las opciones de abajo 👇"
 IS_IT_AN_ORDER = "¿Esto es tu pedido o una pregunta para la tienda? 🤔"
 HELP = "Listo, le paso tu mensaje a la tienda 🙋 Te responden por aquí en un momento."
 EDIT_MENU = "¿Qué quieres corregir? ✏️"

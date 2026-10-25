@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
-from app.routers import panel, simulator, webhook
+from app.routers import panel, simulator, twilio_webhook, webhook
 from app.services.auth import NotLoggedIn
 from app.startup import RedactSecrets, validate_settings
 from app.templating import templates
@@ -47,6 +47,8 @@ app = FastAPI(title=get_settings().store_name, docs_url=None, redoc_url=None, li
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 app.include_router(webhook.router)
+# Siempre montado: sin TWILIO_AUTH_TOKEN rechaza todo (firma inválida).
+app.include_router(twilio_webhook.router)
 app.include_router(panel.router)
 app.add_exception_handler(NotLoggedIn, panel.not_logged_in_handler)
 app.add_exception_handler(panel.OrderActionError, panel.order_error_handler)

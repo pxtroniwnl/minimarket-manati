@@ -11,7 +11,7 @@ Todo está pensado para costar **$0**: el bot es determinista, sin IA de pago, c
 
 ## Índice
 1. [Probarlo en tu computador (simulador)](#1-probarlo-en-tu-computador-simulador)
-2. [Conectar WhatsApp real (Meta)](#2-conectar-whatsapp-real-meta)
+2. [Conectar WhatsApp real (Meta)](#2-conectar-whatsapp-real-meta) · [Prueba rápida con Twilio](#2b-prueba-rápida-con-el-sandbox-de-twilio-sin-número-propio)
 3. [Publicarlo gratis: Render + Neon + UptimeRobot](#3-publicarlo-gratis-render--neon--uptimerobot)
 4. [Alternativa: un PC en la tienda + Cloudflare Tunnel](#4-alternativa-un-pc-en-la-tienda--cloudflare-tunnel)
 5. [Costos](#costos)
@@ -108,6 +108,29 @@ En *WhatsApp → Configuración de la API → Agregar número de teléfono*, reg
 
 ---
 
+## 2b. Prueba rápida con el Sandbox de Twilio (sin número propio)
+
+Si todavía no tienes un número para Meta, puedes probar el bot en tu WhatsApp con el **Sandbox de Twilio**. Sirve **solo para probar**:
+- La cuenta de prueba trae unos **100 mensajes gratis**, y Twilio cuenta tanto los entrantes como los salientes. Alcanzan para unos 8 a 10 pedidos de prueba. Después cobra cada mensaje.
+- Todos usan el número compartido **+1 415 523 8886**. Cada persona que quiera probar le escribe primero `join <código>`, y esa conexión **vence a los 3 días**.
+- Las opciones salen numeradas ("1️⃣ Efectivo, 2️⃣ Nequi…") y se responde con el número, porque el Sandbox no garantiza botones.
+
+Pasos:
+1. Crea una cuenta gratis en https://www.twilio.com/try-twilio.
+2. En la consola entra a **Messaging → Try it out → Send a WhatsApp message**. Desde tu WhatsApp, envía el `join <código>` que aparece ahí al +1 415 523 8886.
+3. En **Sandbox settings**, pon en *When a message comes in* `https://TU-SERVICIO.onrender.com/twilio/webhook` con método **POST**, y guarda.
+4. En Render → *Environment*:
+   - pega `TWILIO_ACCOUNT_SID` y `TWILIO_AUTH_TOKEN` (están en la portada de la consola de Twilio);
+   - cambia `WHATSAPP_MODE=twilio`;
+   - pon `WA_FREE_TIER=50` para que el contador del panel avise antes de que se acaben los mensajes de prueba.
+5. Escribe "hola" al número del Sandbox.
+
+La firma `X-Twilio-Signature` se valida con la URL pública. Render la entrega sola (`RENDER_EXTERNAL_URL`); en otro hosting, define `PUBLIC_URL`.
+
+Cuando tengas el número de Meta, cambia `WHATSAPP_MODE=cloud` y listo: el bot, el panel y los datos son los mismos.
+
+---
+
 ## 3. Publicarlo gratis: Render + Neon + UptimeRobot
 
 ### 3.1 Base de datos en Neon
@@ -189,7 +212,10 @@ Todas están en `.env.example` con comentarios.
 | Variable | Por defecto | Qué hace |
 |---|---|---|
 | `DATABASE_URL` | `sqlite:///./dev.db` | Base de datos. En producción, Postgres. Se aceptan URLs `postgres://`, `postgresql://` o `postgresql+psycopg://` |
-| `WHATSAPP_MODE` | `mock` | `mock` (simulador) o `cloud` (Meta real) |
+| `WHATSAPP_MODE` | `mock` | `mock` (simulador), `cloud` (Meta real) o `twilio` (Sandbox, solo pruebas) |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | — | Credenciales de Twilio (ver la sección 2b) |
+| `TWILIO_FROM` | `whatsapp:+14155238886` | Número del Sandbox |
+| `PUBLIC_URL` | `RENDER_EXTERNAL_URL` | URL pública, usada para validar la firma de Twilio |
 | `WA_PHONE_NUMBER_ID`, `WA_ACCESS_TOKEN`, `WA_VERIFY_TOKEN`, `WA_APP_SECRET` | — | Datos de Meta (ver la sección 2) |
 | `WA_GRAPH_VERSION` | `v26.0` | Versión de la Graph API |
 | `WA_FREE_TIER` | `1000` | Mensajes gratis al mes, usados por el contador del panel |

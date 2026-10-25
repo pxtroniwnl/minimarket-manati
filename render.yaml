@@ -10,7 +10,7 @@ services:
     autoDeploy: true
     envVars:
       - key: WHATSAPP_MODE
-        value: mock         # cambiar a cloud cuando estén las WA_*
+        value: mock         # cloud (Meta) o twilio (Sandbox, solo pruebas)
       - key: DATABASE_URL
         sync: false
       - key: PANEL_PASSWORD
@@ -24,6 +24,10 @@ services:
       - key: WA_VERIFY_TOKEN
         sync: false
       - key: WA_APP_SECRET
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
         sync: false
       - key: STORE_NAME
         value: Minimarket Manatí

@@ -1,7 +1,7 @@
 """Panel del tendero: cola, detalle del pedido, acciones, historial y tiempo real."""
 
 import asyncio
-from datetime import datetime, time, timedelta
+from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -129,7 +129,8 @@ def _help_drafts(db: Session) -> list[Order]:
 def _today_bounds() -> tuple[datetime, datetime]:
     tz = ZoneInfo(get_settings().tz)
     today = datetime.now(tz).date()
-    start = datetime.combine(today, time.min, tzinfo=tz)
+    # En UTC: SQLite compara las fechas como texto y las guarda en UTC.
+    start = datetime.combine(today, time.min, tzinfo=tz).astimezone(UTC)
     return start, start + timedelta(days=1)
 
 

@@ -10,6 +10,10 @@ def get_whatsapp_client() -> WhatsAppClient:
         from app.services.whatsapp.cloud import CloudWhatsAppClient
 
         return CloudWhatsAppClient.from_settings()
+    if get_settings().whatsapp_mode == "twilio":
+        from app.services.whatsapp.twilio import TwilioWhatsAppClient
+
+        return TwilioWhatsAppClient.from_settings()
     from app.services.whatsapp.mock import MockWhatsAppClient
 
     return MockWhatsAppClient()
